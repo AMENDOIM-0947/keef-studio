@@ -5,9 +5,9 @@
   const USERNAME = 'AMENDOIM-0947';
   const REPO = 'keef-studio';
 
-  const existingInstance = document.getElementById(ID);
-  if (existingInstance) {
-    existingInstance.style.display = (existingInstance.style.display === 'none') ? 'flex' : 'none';
+  const ex = document.getElementById(ID);
+  if (ex) {
+    ex.style.display = (ex.style.display === 'none') ? 'flex' : 'none';
     return;
   }
 
@@ -16,6 +16,7 @@
   let copyUnlockAtivo = true;
   let loopAtivo = false;
   let lerImagensAtivo = true;
+  let darkModeAtivo = true;
   let siteAvancaSozinho = false;
   let modoRedacaoAuto = true;
   let currentKeyIndex = 0;
@@ -25,6 +26,7 @@
   const defaultExp = '/resp=Responda de forma objetiva.\n/red=Escreva uma redação completa com introdução, desenvolvimento e conclusão.';
   const expansionsRaw = localStorage.getItem(LE) || defaultExp;
 
+  // Carregamento dinâmico do CSS
   const cssPath = `https://cdn.jsdelivr.net/gh/${USERNAME}/${REPO}@main/styles.css`;
   if (!document.getElementById(ID + '-css')) {
     const link = document.createElement('link');
@@ -34,7 +36,50 @@
     document.head.appendChild(link);
   }
 
-  // --- DESBLOQUEIOS E DESATIVAÇÃO DE ANTI-TRAPAÇA ---
+  // --- MODO ESCURO FORÇADO (FORCED DARK MODE) ---
+  function applyDarkMode(enable) {
+    let styleEl = document.getElementById('keef-dark-theme-v25');
+    if (!enable) {
+      if (styleEl) styleEl.remove();
+      return;
+    }
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'keef-dark-theme-v25';
+      styleEl.textContent = `
+        html, body, 
+        div:not([id^="keef"]):not([class*="keef"]), 
+        p:not([id^="keef"]), 
+        span:not([id^="keef"]), 
+        section, article, main, header, footer, form, fieldset, li, td, th, h1, h2, h3, h4, h5, h6, label, blockquote, nav, table, tr, b, strong, i, em {
+          background-color: #08070d !important;
+          color: #f8fafc !important;
+          border-color: #1e1b2e !important;
+        }
+        a:not([id^="keef"]) { color: #c084fc !important; }
+        input:not([id^="keef"]), textarea:not([id^="keef"]), select:not([id^="keef"]) {
+          background-color: #120e24 !important;
+          color: #fff !important;
+          border: 1px solid #7c3aed !important;
+        }
+        button:not([id^="keef"]):not([class*="keef"]) {
+          background-color: #1c1733 !important;
+          color: #fff !important;
+          border: 1px solid #7c3aed !important;
+        }
+        * {
+          -webkit-user-select: text !important;
+          -moz-user-select: text !important;
+          -ms-user-select: text !important;
+          user-select: text !important;
+        }
+      `;
+      (document.head || document.documentElement).appendChild(styleEl);
+    }
+  }
+  applyDarkMode(darkModeAtivo);
+
+  // --- BYPASS DE SEGURANÇA E ANTI-TRAPAÇA ---
   (function injectBypasses() {
     try {
       Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
@@ -44,17 +89,23 @@
       }
     } catch (e) {}
 
-    const eventsToBlock = ['visibilitychange', 'webkitvisibilitychange', 'blur', 'mouseleave'];
-    eventsToBlock.forEach(evt => {
-      window.addEventListener(evt, e => e.stopImmediatePropagation(), true);
-    });
-
     ['oncopy', 'oncut', 'onpaste', 'oncontextmenu', 'onselectstart', 'ondragstart'].forEach(p => {
       try {
         document[p] = null;
         if (document.body) document.body[p] = null;
         window[p] = null;
       } catch (e) {}
+    });
+
+    ['visibilitychange', 'webkitvisibilitychange', 'blur', 'focusout', 'mouseleave', 'pagehide', 'pointerout', 'mouseout'].forEach(evt => {
+      window.addEventListener(evt, e => {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+      }, true);
+      document.addEventListener(evt, e => {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+      }, true);
     });
 
     ['copy', 'cut', 'paste', 'contextmenu', 'selectstart'].forEach(evt => {
@@ -74,7 +125,7 @@
   // --- INTERFACE DE USUÁRIO (UI) ---
   const animEl = document.createElement('div');
   animEl.id = 'keef-overlay-anim';
-  animEl.innerHTML = '<span>⚡ ANALISANDO QUESTÃO E IMAGENS...</span>';
+  animEl.innerHTML = '<span>⚡ PROCESSANDO COM IA...</span>';
   (document.body || document.documentElement).appendChild(animEl);
 
   const toggleBtn = document.createElement('div');
@@ -98,16 +149,17 @@
     <div class="tabs">
       <div class="tab active" data-tab="ask">Analisador</div>
       <div class="tab" data-tab="exp">Expansão</div>
-      <div class="tab" data-tab="cred">Sobre</div>
+      <div class="tab" data-tab="cred">Créditos</div>
       <div class="tab" data-tab="cfg">Config</div>
     </div>
     <div class="body">
       <div class="panel active" data-panel="ask">
-        <div class="token-info">⚡ Engine Completa | OCR + IA + Auto-Fill</div>
+        <div class="token-info">⚡ Resposta Ultra-Rápida + Seleção Inteligente</div>
         <div class="tgl"><span>Detector Redação/Título</span><button class="tgl-btn on" id="k-essay">ATIVO</button></div>
-        <div class="tgl"><span>Leitura de Imagens (Vision)</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
+        <div class="tgl"><span>Modo Escuro Forçado</span><button class="tgl-btn on" id="k-dark">ATIVO</button></div>
+        <div class="tgl"><span>Leitura de Imagens</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
         <div class="tgl"><span>Avançar Automático</span><button class="tgl-btn" id="k-adv">DESATIVADO</button></div>
-        <label>Instrução Personalizada</label>
+        <label>Instrução IA</label>
         <textarea rows="2" id="k-prompt">Responda a questão/redação com precisão.</textarea>
         <div class="row">
           <button class="btn-p" data-act="ask">&#9889; Resolver Questão</button>
@@ -118,28 +170,28 @@
       </div>
       <div class="panel" data-panel="exp">
         <label>Gatilhos de Expansão (gatilho=expansão)</label>
-        <textarea rows="4" id="k-exp-in"></textarea>
+        <textarea rows="5" id="k-exp-in"></textarea>
         <button class="btn-p" id="k-exp-save">Salvar Regras</button>
         <div class="st"></div>
       </div>
       <div class="panel" data-panel="cred">
-        <div class="about-card">
-          <div style="font-weight:800;font-size:14px;color:#fff">KEEF STUDIO ULTRA</div>
-          <div style="font-size:10px;color:#38bdf8;margin:4px 0 8px">GitHub Live Sync & Universal Injector</div>
-          <p style="font-size:10px;color:#94a3b8;line-height:1.4">Suporte total a OCR por Base64, rotação automática de API Keys e bypass de proteções em tempo real.</p>
+        <div style="text-align:center;padding:10px 0">
+          <div style="font-weight:800;font-size:14px;color:#fff">KEEF STUDIO v25.0</div>
+          <div style="font-size:10px;color:#38bdf8;margin:4px 0 8px">Ultra Speed & Smart Auto-Select</div>
+          <p style="font-size:10px;color:#94a3b8;line-height:1.4">Algoritmo de resposta acelerado, suporte a OCR por imagem e motor de clique universal em alternativas.</p>
         </div>
       </div>
       <div class="panel" data-panel="cfg">
         <label>API Keys Gemini (separadas por vírgula)</label>
         <textarea rows="2" data-f="key" placeholder="AIzaSy..."></textarea>
-        <button class="btn-s" id="k-paste-key" style="width:100%;margin-bottom:8px">&#128203; Colar Key da Área de Transferência</button>
+        <button class="btn-s" id="k-paste-key" style="width:100%;margin-bottom:8px">&#128203; Colar Key</button>
         <label>CORS Proxy (Opcional)</label>
         <input type="text" data-f="proxy" placeholder="https://cors-proxy.org/">
         <label>Endpoint</label>
         <input type="text" data-f="url">
         <label>Modelo</label>
         <input type="text" data-f="model">
-        <button class="btn-s" data-act="save" style="width:100%">Salvar Configurações</button>
+        <button class="btn-s" data-act="save" style="width:100%">Salvar Configuração</button>
         <div class="st"></div>
       </div>
     </div>
@@ -196,6 +248,14 @@
     btnEssay.className = 'tgl-btn ' + (modoRedacaoAuto ? 'on' : '');
   });
 
+  const btnDark = q('#k-dark');
+  btnDark.addEventListener('click', () => {
+    darkModeAtivo = !darkModeAtivo;
+    applyDarkMode(darkModeAtivo);
+    btnDark.textContent = darkModeAtivo ? 'ATIVO' : 'DESATIVADO';
+    btnDark.className = 'tgl-btn ' + (darkModeAtivo ? 'on' : '');
+  });
+
   const btnVision = q('#k-vis');
   btnVision.addEventListener('click', () => {
     lerImagensAtivo = !lerImagensAtivo;
@@ -232,7 +292,7 @@
 
   q('#k-exp-save').addEventListener('click', () => {
     localStorage.setItem(LE, q('#k-exp-in').value);
-    ss('exp', '✔ Regras salvas!', false);
+    ss('exp', '✔ Salvo!', false);
   });
 
   el.querySelectorAll('.tab').forEach(t => {
@@ -280,15 +340,14 @@
     localStorage.setItem(LM, q('[data-f="model"]').value.trim());
     localStorage.setItem(LP, q('[data-f="proxy"]').value.trim());
     currentKeyIndex = 0;
-    ss('cfg', '✔ Configurações salvas!', false);
+    ss('cfg', '✔ Salvo!', false);
   });
 
-  // --- CAPTURA DE IMAGENS (VISION / BASE64) ---
   async function extractImagesParts() {
     if (!lerImagensAtivo) return [];
     const parts = [];
     const target = document.querySelector('.questao.active, .question.active, [class*="questao"], [class*="question"], article, main, form') || document.body;
-    const imgs = Array.from(target.querySelectorAll('img')).filter(img => img.offsetWidth > 50 && img.offsetHeight > 50);
+    const imgs = Array.from(target.querySelectorAll('img')).filter(img => img.offsetWidth > 40 && img.offsetHeight > 40);
 
     for (let i = 0; i < Math.min(imgs.length, 3); i++) {
       const img = imgs[i];
@@ -302,10 +361,7 @@
         const base64Data = dataUrl.split(',')[1];
         if (base64Data) {
           parts.push({
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: base64Data
-            }
+            inlineData: { mimeType: 'image/jpeg', data: base64Data }
           });
         }
       } catch (e) {}
@@ -322,7 +378,7 @@
     const clone = target.cloneNode(true);
     const bads = clone.querySelectorAll('script, style, nav, header, footer, #' + ID + ', [id^="keef"]');
     bads.forEach(b => b.remove());
-    return (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1800);
+    return (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1500);
   }
 
   function triggerFullClick(elItem) {
@@ -352,7 +408,7 @@
     const cls = (elItem.className || '').toString().toLowerCase();
     const id = (elItem.id || '').toLowerCase();
     const href = (elItem.getAttribute('href') || '').toLowerCase();
-    const bad = ['sair', 'logout', 'logoff', 'voltar', 'home', 'inicio', 'dashboard', 'cancelar', 'fechar', 'menu', 'perfil', 'login'];
+    const bad = ['sair', 'logout', 'logoff', 'voltar', 'home', 'inicio', 'dashboard', 'cancelar', 'fechar', 'abandonar', 'menu', 'perfil', 'login'];
     for (let i = 0; i < bad.length; i++) {
       if (txt === bad[i] || cls.includes(bad[i]) || id.includes(bad[i]) || href.includes(bad[i])) return false;
     }
@@ -365,7 +421,6 @@
     return true;
   }
 
-  // --- SIMULADOR DE DIGITAÇÃO HUMANA ---
   async function simularDigitacaoHumana(campo, texto) {
     if (!campo || !texto) return;
     try { campo.focus(); } catch (e) {}
@@ -427,7 +482,6 @@
     return preenchido;
   }
 
-  // --- SELEÇÃO INTELIGENTE DE ALTERNATIVAS ---
   function selecionarECircular(textoAlvo, letraAlvo) {
     if (!textoAlvo && !letraAlvo) return false;
     const targetText = (textoAlvo || '').trim().toLowerCase();
@@ -446,9 +500,7 @@
       'div[class*="alternativa"]',
       'div[class*="choice"]',
       'div[class*="answer"]',
-      'div[class*="resposta"]',
-      'span[class*="option"]',
-      'p[class*="option"]'
+      'div[class*="resposta"]'
     ];
     const elements = Array.from(document.querySelectorAll(candidateSelectors.join(',')));
     let matchFound = false;
@@ -468,21 +520,19 @@
 
       let isTextMatch = false;
       if (targetText && targetText.length >= 2) {
-        const cleanTarget = targetText.replace(/^[a-eA-E][\.\)\s\-:]+/, '').trim();
-        isTextMatch = cleanTxt.includes(targetText) || 
-                      (cleanTarget.length >= 3 && cleanTxt.includes(cleanTarget)) || 
-                      (cleanTxt.length > 3 && targetText.includes(cleanTxt));
+        isTextMatch = cleanTxt.includes(targetText) || (cleanTxt.length > 3 && targetText.includes(cleanTxt));
       }
 
       if (isLetterMatch || isTextMatch) {
         matchFound = true;
         triggerFullClick(elItem);
-        
+
         const highlightEl = (elItem.tagName === 'INPUT' && elItem.parentElement) ? elItem.parentElement : elItem;
         highlightEl.style.outline = '3px solid #a855f7';
         highlightEl.style.boxShadow = '0 0 16px rgba(168,85,247,0.9)';
         highlightEl.style.borderRadius = '6px';
-        
+        highlightEl.style.transition = 'all 0.2s ease';
+
         if (elItem.tagName === 'INPUT') {
           const parentLabel = elItem.closest('label') || document.querySelector('label[for="' + elItem.id + '"]');
           if (parentLabel) triggerFullClick(parentLabel);
@@ -511,25 +561,31 @@
   }
 
   function buildRequestObj(baseUrl, apiKey, model, proxyPrefix, partsArray) {
-    let fu = baseUrl.replace(/\/+$/, '');
-    const modelTarget = model || 'gemini-1.5-flash';
+    let fu = (baseUrl || 'https://generativelanguage.googleapis.com/v1beta/models/').trim().replace(/\/+$/, '');
+    const modelTarget = (model || 'gemini-1.5-flash').trim();
+
     if (fu.indexOf(':generateContent') === -1) {
       if (fu.endsWith('/models')) fu += '/' + modelTarget + ':generateContent';
       else if (fu.includes('/models/')) fu += ':generateContent';
       else fu += '/' + modelTarget + ':generateContent';
     }
+
     let targetUrl = fu + '?key=' + encodeURIComponent(apiKey);
     if (proxyPrefix && proxyPrefix.trim()) targetUrl = proxyPrefix.trim() + encodeURI(targetUrl);
+
     return {
       url: targetUrl,
       headers: { 'Content-Type': 'application/json' },
-      body: { contents: [{ parts: partsArray }], generationConfig: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 512 } }
+      body: {
+        contents: [{ parts: partsArray }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 512 }
+      }
     };
   }
 
   async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs || 8000);
+    const id = setTimeout(() => controller.abort(), timeoutMs || 7000);
     const opts = Object.assign({}, options, { signal: controller.signal });
     try {
       const res = await fetch(url, opts);
@@ -541,7 +597,7 @@
     }
   }
 
-  // --- ENGINE PRINCIPAL DE RESOLUÇÃO ---
+  // --- ENGINE DE RESOLUÇÃO ---
   async function ra() {
     const btn = q('[data-act="ask"]'), ans = q('.ans');
     btn.disabled = true;
@@ -553,14 +609,17 @@
       const p = localStorage.getItem(LP) || '';
       let qs = q('#k-prompt').value.trim();
       qs = applyExpansions(qs);
+
       const keys = getKeys();
-      if (keys.length === 0) { ss('ask', '⚠ Cadastre a API Key na aba Config!', true); return false; }
+      if (keys.length === 0) {
+        ss('ask', '⚠ Insira uma API Key na aba Config!', true);
+        return false;
+      }
 
       const pageTxt = extractMinimalPageText();
       const imageParts = await extractImagesParts();
-      
-      const promptText = 'Questão:\n' + pageTxt + '\nInstrução:' + qs + '\nResponda estritamente neste formato JSON:{"eh_redacao":false,"titulo":"","redacao":"","letra":"A","texto_alternativa":"texto exato da opção selecionada","explicacao":""}';
-      
+
+      const promptText = 'Questão:\n' + pageTxt + '\nInstrução:' + qs + '\nResponda estritamente neste formato JSON:{"eh_redacao":false,"titulo":"","redacao":"","letra":"A","texto_alternativa":"texto da resposta","explicacao":""}';
       const partsArray = [{ text: promptText }, ...imageParts];
 
       let rp, lastEt, sucesso = false;
@@ -568,16 +627,19 @@
         const currentKey = keys[currentKeyIndex];
         const rq = buildRequestObj(u, currentKey, m, p, partsArray);
         try {
-          rp = await fetchWithTimeout(rq.url, { method: 'POST', headers: rq.headers, body: JSON.stringify(rq.body) }, 8000);
+          rp = await fetchWithTimeout(rq.url, { method: 'POST', headers: rq.headers, body: JSON.stringify(rq.body) }, 7000);
           if (rp.ok) { sucesso = true; break; }
+          else {
+            const errBody = await rp.text();
+            lastEt = 'HTTP ' + rp.status + ' - ' + errBody.slice(0, 40);
+          }
         } catch (e) {
           lastEt = e.message;
-          currentKeyIndex = (currentKeyIndex + 1) % keys.length;
-          continue;
         }
+        currentKeyIndex = (currentKeyIndex + 1) % keys.length;
       }
 
-      if (!sucesso) throw new Error('Erro API/Key: ' + (lastEt || 'Falha na requisição').slice(0, 60));
+      if (!sucesso) throw new Error('Erro API: ' + (lastEt || 'Falha na requisição').slice(0, 60));
       const dt = await rp.json();
       let rawText = (dt.candidates?.[0]?.content?.parts?.[0]?.text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -624,9 +686,9 @@
       const ok = await ra();
       if (!ok) { loopAtivo = false; showAnim(false); break; }
       lastQuestionSig = sigBefore;
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 300));
       if (!siteAvancaSozinho) clicarProximo();
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 600));
     }
   }
 
