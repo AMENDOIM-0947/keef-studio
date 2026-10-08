@@ -23,6 +23,7 @@
   flex-direction: column !important;
   overflow: hidden !important;
   border: 1px solid rgba(168,85,247,0.5) !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .keef-mobile-sheet {
@@ -43,6 +44,21 @@
   flex-direction: column !important;
   overflow: hidden !important;
   border-top: 2px solid #a855f7 !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ANIMAÇÃO RGB DO MODO FESTA */
+@keyframes keef-rgb-anim {
+  0% { border-color: #ff0055 !important; box-shadow: 0 0 25px #ff0055 !important; }
+  20% { border-color: #ff9900 !important; box-shadow: 0 0 25px #ff9900 !important; }
+  40% { border-color: #33ff00 !important; box-shadow: 0 0 25px #33ff00 !important; }
+  60% { border-color: #00ffff !important; box-shadow: 0 0 25px #00ffff !important; }
+  80% { border-color: #9900ff !important; box-shadow: 0 0 25px #9900ff !important; }
+  100% { border-color: #ff0055 !important; box-shadow: 0 0 25px #ff0055 !important; }
+}
+
+.keef-rgb-active {
+  animation: keef-rgb-anim 2s linear infinite !important;
 }
 
 #keef-studio-v25 .hdr {
