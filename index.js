@@ -5,9 +5,9 @@
   const USERNAME = 'AMENDOIM-0947';
   const REPO = 'keef-studio';
 
-  const ex = document.getElementById(ID);
-  if (ex) {
-    ex.style.display = (ex.style.display === 'none') ? 'flex' : 'none';
+  const existingInstance = document.getElementById(ID);
+  if (existingInstance) {
+    existingInstance.style.display = (existingInstance.style.display === 'none') ? 'flex' : 'none';
     return;
   }
 
@@ -22,7 +22,7 @@
   let lastQuestionSig = '';
 
   const LK = 'keef_api_keys', LU = 'keef_endpoint_url', LM = 'keef_model', LE = 'keef_expansions', LP = 'keef_proxy_url';
-  const defaultExp = '/resp=Responda de forma objetiva.\n/red=Escreva uma redação completa.';
+  const defaultExp = '/resp=Responda de forma objetiva.\n/red=Escreva uma redação completa com introdução, desenvolvimento e conclusão.';
   const expansionsRaw = localStorage.getItem(LE) || defaultExp;
 
   const cssPath = `https://cdn.jsdelivr.net/gh/${USERNAME}/${REPO}@main/styles.css`;
@@ -34,7 +34,8 @@
     document.head.appendChild(link);
   }
 
-  (function setupProtections() {
+  // --- DESBLOQUEIOS E DESATIVAÇÃO DE ANTI-TRAPAÇA ---
+  (function injectBypasses() {
     try {
       Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
       Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
@@ -42,6 +43,11 @@
         document.hasFocus = () => true;
       }
     } catch (e) {}
+
+    const eventsToBlock = ['visibilitychange', 'webkitvisibilitychange', 'blur', 'mouseleave'];
+    eventsToBlock.forEach(evt => {
+      window.addEventListener(evt, e => e.stopImmediatePropagation(), true);
+    });
 
     ['oncopy', 'oncut', 'onpaste', 'oncontextmenu', 'onselectstart', 'ondragstart'].forEach(p => {
       try {
@@ -65,9 +71,10 @@
   const sm = localStorage.getItem(LM) || 'gemini-1.5-flash';
   const sp = localStorage.getItem(LP) || '';
 
+  // --- INTERFACE DE USUÁRIO (UI) ---
   const animEl = document.createElement('div');
   animEl.id = 'keef-overlay-anim';
-  animEl.innerHTML = '<span>⚡ PROCESSANDO COM IA...</span>';
+  animEl.innerHTML = '<span>⚡ ANALISANDO QUESTÃO E IMAGENS...</span>';
   (document.body || document.documentElement).appendChild(animEl);
 
   const toggleBtn = document.createElement('div');
@@ -96,14 +103,14 @@
     </div>
     <div class="body">
       <div class="panel active" data-panel="ask">
-        <div class="token-info">⚡ Engine Otimizada | ${isMobile ? 'Modo Touch Ativo' : 'Modo Desktop Ativo'}</div>
+        <div class="token-info">⚡ Engine Completa | OCR + IA + Auto-Fill</div>
         <div class="tgl"><span>Detector Redação/Título</span><button class="tgl-btn on" id="k-essay">ATIVO</button></div>
-        <div class="tgl"><span>Leitura de Imagens</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
+        <div class="tgl"><span>Leitura de Imagens (Vision)</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
         <div class="tgl"><span>Avançar Automático</span><button class="tgl-btn" id="k-adv">DESATIVADO</button></div>
-        <label>Instrução IA</label>
+        <label>Instrução Personalizada</label>
         <textarea rows="2" id="k-prompt">Responda a questão/redação com precisão.</textarea>
         <div class="row">
-          <button class="btn-p" data-act="ask">&#9889; Responder Rápido</button>
+          <button class="btn-p" data-act="ask">&#9889; Resolver Questão</button>
           <button class="btn-loop" data-act="loop">&#9654; Auto-Loop</button>
         </div>
         <div class="st"></div>
@@ -117,15 +124,15 @@
       </div>
       <div class="panel" data-panel="cred">
         <div class="about-card">
-          <div style="font-weight:800;font-size:14px;color:#fff">KEEF STUDIO v25.0</div>
-          <div style="font-size:10px;color:#38bdf8;margin:4px 0 8px">GitHub Live Sync & Cross-Device Engine</div>
-          <p style="font-size:10px;color:#94a3b8;line-height:1.4">Interface adaptativa com suporte inteligente para smartphones e PCs.</p>
+          <div style="font-weight:800;font-size:14px;color:#fff">KEEF STUDIO ULTRA</div>
+          <div style="font-size:10px;color:#38bdf8;margin:4px 0 8px">GitHub Live Sync & Universal Injector</div>
+          <p style="font-size:10px;color:#94a3b8;line-height:1.4">Suporte total a OCR por Base64, rotação automática de API Keys e bypass de proteções em tempo real.</p>
         </div>
       </div>
       <div class="panel" data-panel="cfg">
         <label>API Keys Gemini (separadas por vírgula)</label>
         <textarea rows="2" data-f="key" placeholder="AIzaSy..."></textarea>
-        <button class="btn-s" id="k-paste-key" style="width:100%;margin-bottom:8px">&#128203; Colar Key</button>
+        <button class="btn-s" id="k-paste-key" style="width:100%;margin-bottom:8px">&#128203; Colar Key da Área de Transferência</button>
         <label>CORS Proxy (Opcional)</label>
         <input type="text" data-f="proxy" placeholder="https://cors-proxy.org/">
         <label>Endpoint</label>
@@ -276,6 +283,36 @@
     ss('cfg', '✔ Configurações salvas!', false);
   });
 
+  // --- CAPTURA DE IMAGENS (VISION / BASE64) ---
+  async function extractImagesParts() {
+    if (!lerImagensAtivo) return [];
+    const parts = [];
+    const target = document.querySelector('.questao.active, .question.active, [class*="questao"], [class*="question"], article, main, form') || document.body;
+    const imgs = Array.from(target.querySelectorAll('img')).filter(img => img.offsetWidth > 50 && img.offsetHeight > 50);
+
+    for (let i = 0; i < Math.min(imgs.length, 3); i++) {
+      const img = imgs[i];
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.offsetWidth;
+        canvas.height = img.naturalHeight || img.offsetHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const base64Data = dataUrl.split(',')[1];
+        if (base64Data) {
+          parts.push({
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: base64Data
+            }
+          });
+        }
+      } catch (e) {}
+    }
+    return parts;
+  }
+
   function getQuestionSignature() {
     return (document.body.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   }
@@ -285,7 +322,7 @@
     const clone = target.cloneNode(true);
     const bads = clone.querySelectorAll('script, style, nav, header, footer, #' + ID + ', [id^="keef"]');
     bads.forEach(b => b.remove());
-    return (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1500);
+    return (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1800);
   }
 
   function triggerFullClick(elItem) {
@@ -328,6 +365,7 @@
     return true;
   }
 
+  // --- SIMULADOR DE DIGITAÇÃO HUMANA ---
   async function simularDigitacaoHumana(campo, texto) {
     if (!campo || !texto) return;
     try { campo.focus(); } catch (e) {}
@@ -356,6 +394,7 @@
     titulo = applyExpansions(titulo || '');
     const nodes = Array.from(document.querySelectorAll('*'));
     let preenchido = false;
+
     if (titulo) {
       for (let k = 0; k < nodes.length; k++) {
         const elItem = nodes[k];
@@ -369,6 +408,7 @@
         }
       }
     }
+
     const corpo = texto || titulo;
     if (corpo) {
       for (let i = 0; i < nodes.length; i++) {
@@ -387,6 +427,7 @@
     return preenchido;
   }
 
+  // --- SELEÇÃO INTELIGENTE DE ALTERNATIVAS ---
   function selecionarECircular(textoAlvo, letraAlvo) {
     if (!textoAlvo && !letraAlvo) return false;
     const targetText = (textoAlvo || '').trim().toLowerCase();
@@ -500,6 +541,7 @@
     }
   }
 
+  // --- ENGINE PRINCIPAL DE RESOLUÇÃO ---
   async function ra() {
     const btn = q('[data-act="ask"]'), ans = q('.ans');
     btn.disabled = true;
@@ -515,8 +557,11 @@
       if (keys.length === 0) { ss('ask', '⚠ Cadastre a API Key na aba Config!', true); return false; }
 
       const pageTxt = extractMinimalPageText();
+      const imageParts = await extractImagesParts();
+      
       const promptText = 'Questão:\n' + pageTxt + '\nInstrução:' + qs + '\nResponda estritamente neste formato JSON:{"eh_redacao":false,"titulo":"","redacao":"","letra":"A","texto_alternativa":"texto exato da opção selecionada","explicacao":""}';
-      const partsArray = [{ text: promptText }];
+      
+      const partsArray = [{ text: promptText }, ...imageParts];
 
       let rp, lastEt, sucesso = false;
       for (let attempt = 0; attempt < keys.length; attempt++) {
