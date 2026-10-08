@@ -13,18 +13,36 @@
 
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
+  // Estados dos Controlos
   let copyUnlockAtivo = true;
   let loopAtivo = false;
   let lerImagensAtivo = true;
   let darkModeAtivo = true;
-  let siteAvancaSozinho = false;
+  let siteAvancaSozinho = true;
   let modoRedacaoAuto = true;
+  let rgbFestaAtivo = false;
+  let spooferAtivo = true;
+  let humanizadoAtivo = true;
+
   let currentKeyIndex = 0;
   let lastQuestionSig = '';
 
   const LK = 'keef_api_keys', LU = 'keef_endpoint_url', LM = 'keef_model', LE = 'keef_expansions', LP = 'keef_proxy_url';
   const defaultExp = '/resp=Responda de forma objetiva.\n/red=Escreva uma redação completa com introdução, desenvolvimento e conclusão.';
   const expansionsRaw = localStorage.getItem(LE) || defaultExp;
+
+  // CORREÇÃO DA API: Higienizar modelo e URL inválidos no localStorage
+  let savedModel = localStorage.getItem(LM) || '';
+  if (!savedModel || savedModel.includes('3.6') || savedModel.includes('invalid')) {
+    savedModel = 'gemini-1.5-flash';
+    localStorage.setItem(LM, savedModel);
+  }
+
+  let savedUrl = localStorage.getItem(LU) || '';
+  if (!savedUrl || !savedUrl.startsWith('http')) {
+    savedUrl = 'https://generativelanguage.googleapis.com/v1beta/models/';
+    localStorage.setItem(LU, savedUrl);
+  }
 
   // Carregamento dinâmico do CSS
   const cssPath = `https://cdn.jsdelivr.net/gh/${USERNAME}/${REPO}@main/styles.css`;
@@ -36,7 +54,58 @@
     document.head.appendChild(link);
   }
 
-  // --- MODO ESCURO FORÇADO (FORCED DARK MODE) ---
+  // --- SISTEMA SPOOFER DE FOCO E VISIBILIDADE ---
+  function applySpoofer() {
+    if (!spooferAtivo) return;
+    try {
+      Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+      Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+      if (typeof document.hasFocus === 'function') {
+        document.hasFocus = () => true;
+      }
+      if (navigator.webdriver) {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: true });
+      }
+    } catch (e) {}
+
+    const blockEvents = ['visibilitychange', 'webkitvisibilitychange', 'blur', 'focusout', 'mouseleave', 'pagehide', 'pointerout', 'mouseout'];
+    blockEvents.forEach(evt => {
+      window.addEventListener(evt, e => {
+        if (spooferAtivo) {
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+        }
+      }, true);
+      document.addEventListener(evt, e => {
+        if (spooferAtivo) {
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+        }
+      }, true);
+    });
+  }
+  applySpoofer();
+
+  // --- DESBLOQUEIO DE COPIAR E COLAR ---
+  (function setupCopyUnlock() {
+    ['oncopy', 'oncut', 'onpaste', 'oncontextmenu', 'onselectstart', 'ondragstart'].forEach(p => {
+      try {
+        document[p] = null;
+        if (document.body) document.body[p] = null;
+        window[p] = null;
+      } catch (e) {}
+    });
+
+    ['copy', 'cut', 'paste', 'contextmenu', 'selectstart', 'dragstart'].forEach(evt => {
+      window.addEventListener(evt, e => {
+        if (!copyUnlockAtivo) return;
+        if (e.target && e.target.closest && e.target.closest('#' + ID)) return;
+        e.stopPropagation();
+      }, true);
+    });
+  })();
+
+  // --- MODO ESCURO FORÇADO ---
   function applyDarkMode(enable) {
     let styleEl = document.getElementById('keef-dark-theme-v25');
     if (!enable) {
@@ -59,12 +128,12 @@
         a:not([id^="keef"]) { color: #c084fc !important; }
         input:not([id^="keef"]), textarea:not([id^="keef"]), select:not([id^="keef"]) {
           background-color: #120e24 !important;
-          color: #fff !important;
+          color: #ffffff !important;
           border: 1px solid #7c3aed !important;
         }
         button:not([id^="keef"]):not([class*="keef"]) {
           background-color: #1c1733 !important;
-          color: #fff !important;
+          color: #ffffff !important;
           border: 1px solid #7c3aed !important;
         }
         * {
@@ -79,50 +148,17 @@
   }
   applyDarkMode(darkModeAtivo);
 
-  // --- BYPASS DE SEGURANÇA E ANTI-TRAPAÇA ---
-  (function injectBypasses() {
-    try {
-      Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
-      Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-      if (typeof document.hasFocus === 'function') {
-        document.hasFocus = () => true;
-      }
-    } catch (e) {}
+  // --- MODO FESTA (RGB) ---
+  function applyRGBMode(enable) {
+    rgbFestaAtivo = enable;
+    if (enable) {
+      el.classList.add('keef-rgb-active');
+    } else {
+      el.classList.remove('keef-rgb-active');
+    }
+  }
 
-    ['oncopy', 'oncut', 'onpaste', 'oncontextmenu', 'onselectstart', 'ondragstart'].forEach(p => {
-      try {
-        document[p] = null;
-        if (document.body) document.body[p] = null;
-        window[p] = null;
-      } catch (e) {}
-    });
-
-    ['visibilitychange', 'webkitvisibilitychange', 'blur', 'focusout', 'mouseleave', 'pagehide', 'pointerout', 'mouseout'].forEach(evt => {
-      window.addEventListener(evt, e => {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-      }, true);
-      document.addEventListener(evt, e => {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-      }, true);
-    });
-
-    ['copy', 'cut', 'paste', 'contextmenu', 'selectstart'].forEach(evt => {
-      window.addEventListener(evt, e => {
-        if (!copyUnlockAtivo) return;
-        if (e.target && e.target.closest && e.target.closest('#' + ID)) return;
-        e.stopPropagation();
-      }, true);
-    });
-  })();
-
-  const sk = localStorage.getItem(LK) || '';
-  const su = localStorage.getItem(LU) || 'https://generativelanguage.googleapis.com/v1beta/models/';
-  const sm = localStorage.getItem(LM) || 'gemini-1.5-flash';
-  const sp = localStorage.getItem(LP) || '';
-
-  // --- INTERFACE DE USUÁRIO (UI) ---
+  // ESTRUTURA DA INTERFACE (UI)
   const animEl = document.createElement('div');
   animEl.id = 'keef-overlay-anim';
   animEl.innerHTML = '<span>⚡ PROCESSANDO COM IA...</span>';
@@ -154,12 +190,18 @@
     </div>
     <div class="body">
       <div class="panel active" data-panel="ask">
-        <div class="token-info">⚡ Resposta Ultra-Rápida + Seleção Inteligente</div>
+        <div class="token-info">⚡ Engine Completa | Spoofer + Humanizado + RGB</div>
+        
         <div class="tgl"><span>Detector Redação/Título</span><button class="tgl-btn on" id="k-essay">ATIVO</button></div>
         <div class="tgl"><span>Modo Escuro Forçado</span><button class="tgl-btn on" id="k-dark">ATIVO</button></div>
-        <div class="tgl"><span>Leitura de Imagens</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
-        <div class="tgl"><span>Avançar Automático</span><button class="tgl-btn" id="k-adv">DESATIVADO</button></div>
-        <label>Instrução IA</label>
+        <div class="tgl"><span>Liberar Copiar e Colar</span><button class="tgl-btn on" id="k-copy">ATIVO</button></div>
+        <div class="tgl"><span>Leitura de Imagens (OCR)</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
+        <div class="tgl"><span>Avançar Automático</span><button class="tgl-btn on" id="k-adv">ATIVO</button></div>
+        <div class="tgl"><span>Sistema Spoofer (Bypass)</span><button class="tgl-btn on" id="k-spoof">ATIVO</button></div>
+        <div class="tgl"><span>Digitação Humanizada</span><button class="tgl-btn on" id="k-human">ATIVO</button></div>
+        <div class="tgl"><span>Modo Festa (RGB)</span><button class="tgl-btn" id="k-rgb">DESATIVADO</button></div>
+
+        <label style="margin-top:8px">Instrução IA</label>
         <textarea rows="2" id="k-prompt">Responda a questão/redação com precisão.</textarea>
         <div class="row">
           <button class="btn-p" data-act="ask">&#9889; Resolver Questão</button>
@@ -176,9 +218,9 @@
       </div>
       <div class="panel" data-panel="cred">
         <div style="text-align:center;padding:10px 0">
-          <div style="font-weight:800;font-size:14px;color:#fff">KEEF STUDIO v25.0</div>
-          <div style="font-size:10px;color:#38bdf8;margin:4px 0 8px">Ultra Speed & Smart Auto-Select</div>
-          <p style="font-size:10px;color:#94a3b8;line-height:1.4">Algoritmo de resposta acelerado, suporte a OCR por imagem e motor de clique universal em alternativas.</p>
+          <div style="font-weight:800;font-size:14px;color:#fff">KEEF STUDIO v25.0 ULTRA</div>
+          <div style="font-size:10px;color:#38bdf8;margin:4px 0 8px">GitHub Live Sync & Universal Engine</div>
+          <p style="font-size:10px;color:#94a3b8;line-height:1.4">Sistema otimizado com Spoofer de Foco, Digitação Humanizada, Modo RGB, OCR Base64 e Suporte a Múltiplas API Keys.</p>
         </div>
       </div>
       <div class="panel" data-panel="cfg">
@@ -199,10 +241,11 @@
 
   (document.body || document.documentElement).appendChild(el);
 
-  el.querySelector('[data-f="url"]').value = su;
+  const sk = localStorage.getItem(LK) || '';
+  el.querySelector('[data-f="url"]').value = savedUrl;
   el.querySelector('[data-f="key"]').value = sk;
-  el.querySelector('[data-f="model"]').value = sm;
-  el.querySelector('[data-f="proxy"]').value = sp;
+  el.querySelector('[data-f="model"]').value = savedModel;
+  el.querySelector('[data-f="proxy"]').value = localStorage.getItem(LP) || '';
   el.querySelector('#k-exp-in').value = expansionsRaw;
 
   function q(s) { return el.querySelector(s); }
@@ -241,33 +284,56 @@
   };
   document.addEventListener('keydown', keyHandler);
 
-  const btnEssay = q('#k-essay');
-  btnEssay.addEventListener('click', () => {
+  // BOTÕES DE ATIVAÇÃO / DESATIVAÇÃO
+  q('#k-essay').addEventListener('click', function() {
     modoRedacaoAuto = !modoRedacaoAuto;
-    btnEssay.textContent = modoRedacaoAuto ? 'ATIVO' : 'DESATIVADO';
-    btnEssay.className = 'tgl-btn ' + (modoRedacaoAuto ? 'on' : '');
+    this.textContent = modoRedacaoAuto ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (modoRedacaoAuto ? 'on' : '');
   });
 
-  const btnDark = q('#k-dark');
-  btnDark.addEventListener('click', () => {
+  q('#k-dark').addEventListener('click', function() {
     darkModeAtivo = !darkModeAtivo;
     applyDarkMode(darkModeAtivo);
-    btnDark.textContent = darkModeAtivo ? 'ATIVO' : 'DESATIVADO';
-    btnDark.className = 'tgl-btn ' + (darkModeAtivo ? 'on' : '');
+    this.textContent = darkModeAtivo ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (darkModeAtivo ? 'on' : '');
   });
 
-  const btnVision = q('#k-vis');
-  btnVision.addEventListener('click', () => {
+  q('#k-copy').addEventListener('click', function() {
+    copyUnlockAtivo = !copyUnlockAtivo;
+    this.textContent = copyUnlockAtivo ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (copyUnlockAtivo ? 'on' : '');
+  });
+
+  q('#k-vis').addEventListener('click', function() {
     lerImagensAtivo = !lerImagensAtivo;
-    btnVision.textContent = lerImagensAtivo ? 'ATIVO' : 'DESATIVADO';
-    btnVision.className = 'tgl-btn ' + (lerImagensAtivo ? 'on' : '');
+    this.textContent = lerImagensAtivo ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (lerImagensAtivo ? 'on' : '');
   });
 
-  const btnAutoAdv = q('#k-adv');
-  btnAutoAdv.addEventListener('click', () => {
+  q('#k-adv').addEventListener('click', function() {
     siteAvancaSozinho = !siteAvancaSozinho;
-    btnAutoAdv.textContent = siteAvancaSozinho ? 'ATIVO' : 'DESATIVADO';
-    btnAutoAdv.className = 'tgl-btn ' + (siteAvancaSozinho ? 'on' : '');
+    this.textContent = siteAvancaSozinho ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (siteAvancaSozinho ? 'on' : '');
+  });
+
+  q('#k-spoof').addEventListener('click', function() {
+    spooferAtivo = !spooferAtivo;
+    applySpoofer();
+    this.textContent = spooferAtivo ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (spooferAtivo ? 'on' : '');
+  });
+
+  q('#k-human').addEventListener('click', function() {
+    humanizadoAtivo = !humanizadoAtivo;
+    this.textContent = humanizadoAtivo ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (humanizadoAtivo ? 'on' : '');
+  });
+
+  q('#k-rgb').addEventListener('click', function() {
+    rgbFestaAtivo = !rgbFestaAtivo;
+    applyRGBMode(rgbFestaAtivo);
+    this.textContent = rgbFestaAtivo ? 'ATIVO' : 'DESATIVADO';
+    this.className = 'tgl-btn ' + (rgbFestaAtivo ? 'on' : '');
   });
 
   function getExpansionsMap() {
@@ -335,14 +401,20 @@
   }
 
   q('[data-act="save"]').addEventListener('click', () => {
-    localStorage.setItem(LU, q('[data-f="url"]').value.trim());
+    let u = q('[data-f="url"]').value.trim();
+    let m = q('[data-f="model"]').value.trim();
+    if (!u) u = 'https://generativelanguage.googleapis.com/v1beta/models/';
+    if (!m || m.includes('3.6')) m = 'gemini-1.5-flash';
+
+    localStorage.setItem(LU, u);
     localStorage.setItem(LK, q('[data-f="key"]').value.trim());
-    localStorage.setItem(LM, q('[data-f="model"]').value.trim());
+    localStorage.setItem(LM, m);
     localStorage.setItem(LP, q('[data-f="proxy"]').value.trim());
     currentKeyIndex = 0;
-    ss('cfg', '✔ Salvo!', false);
+    ss('cfg', '✔ Configuração Salva!', false);
   });
 
+  // CAPTURA DE IMAGENS (OCR / VISION)
   async function extractImagesParts() {
     if (!lerImagensAtivo) return [];
     const parts = [];
@@ -421,6 +493,7 @@
     return true;
   }
 
+  // SIMULADOR DE DIGITAÇÃO HUMANIZADA COM INTERVALOS VARIABLE-INTERVAL
   async function simularDigitacaoHumana(campo, texto) {
     if (!campo || !texto) return;
     try { campo.focus(); } catch (e) {}
@@ -428,18 +501,23 @@
     const tag = (campo.tagName || '').toUpperCase();
     const nSetter = (tag === 'INPUT') ? (Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set) : (Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set);
     let i = 0;
+    
+    const chunkSize = humanizadoAtivo ? 3 : 8;
     while (i < texto.length) {
-      const chunk = texto.slice(i, i + 6);
+      const chunk = texto.slice(i, i + chunkSize);
       val += chunk;
-      i += 6;
+      i += chunkSize;
       if (campo.isContentEditable) campo.innerText = val;
       else if (nSetter) nSetter.call(campo, val);
       else campo.value = val;
+      
       try { campo.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: chunk })); } catch (e) {
         campo.dispatchEvent(new Event('input', { bubbles: true }));
       }
       campo.dispatchEvent(new Event('change', { bubbles: true }));
-      await new Promise(r => setTimeout(r, 5));
+      
+      const delay = humanizadoAtivo ? Math.floor(Math.random() * 25) + 15 : 5;
+      await new Promise(r => setTimeout(r, delay));
     }
   }
 
@@ -560,9 +638,14 @@
     return false;
   }
 
+  // CONSTRUÇÃO E VALIDAÇÃO DA REQUISIÇÃO À API
   function buildRequestObj(baseUrl, apiKey, model, proxyPrefix, partsArray) {
     let fu = (baseUrl || 'https://generativelanguage.googleapis.com/v1beta/models/').trim().replace(/\/+$/, '');
-    const modelTarget = (model || 'gemini-1.5-flash').trim();
+    let modelTarget = (model || 'gemini-1.5-flash').trim();
+
+    if (modelTarget.includes('3.6') || modelTarget.includes('invalid')) {
+      modelTarget = 'gemini-1.5-flash';
+    }
 
     if (fu.indexOf(':generateContent') === -1) {
       if (fu.endsWith('/models')) fu += '/' + modelTarget + ':generateContent';
@@ -585,7 +668,7 @@
 
   async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs || 7000);
+    const id = setTimeout(() => controller.abort(), timeoutMs || 8000);
     const opts = Object.assign({}, options, { signal: controller.signal });
     try {
       const res = await fetch(url, opts);
@@ -597,22 +680,22 @@
     }
   }
 
-  // --- ENGINE DE RESOLUÇÃO ---
+  // ENGINE DE RESOLUÇÃO COM SUPORTE MULTI-KEY
   async function ra() {
     const btn = q('[data-act="ask"]'), ans = q('.ans');
     btn.disabled = true;
     showAnim(true);
     ss('ask', '', false);
     try {
-      const u = localStorage.getItem(LU) || 'https://generativelanguage.googleapis.com/v1beta/models/';
-      const m = localStorage.getItem(LM) || 'gemini-1.5-flash';
+      let u = localStorage.getItem(LU) || 'https://generativelanguage.googleapis.com/v1beta/models/';
+      let m = localStorage.getItem(LM) || 'gemini-1.5-flash';
       const p = localStorage.getItem(LP) || '';
       let qs = q('#k-prompt').value.trim();
       qs = applyExpansions(qs);
 
       const keys = getKeys();
       if (keys.length === 0) {
-        ss('ask', '⚠ Insira uma API Key na aba Config!', true);
+        ss('ask', '⚠ Cadastre a API Key na aba Config!', true);
         return false;
       }
 
@@ -627,7 +710,7 @@
         const currentKey = keys[currentKeyIndex];
         const rq = buildRequestObj(u, currentKey, m, p, partsArray);
         try {
-          rp = await fetchWithTimeout(rq.url, { method: 'POST', headers: rq.headers, body: JSON.stringify(rq.body) }, 7000);
+          rp = await fetchWithTimeout(rq.url, { method: 'POST', headers: rq.headers, body: JSON.stringify(rq.body) }, 8000);
           if (rp.ok) { sucesso = true; break; }
           else {
             const errBody = await rp.text();
@@ -647,6 +730,10 @@
 
       let parsed;
       try { parsed = JSON.parse(rawText); } catch (e) { parsed = { eh_redacao: false, texto_alternativa: rawText, explicacao: '' }; }
+
+      if (humanizadoAtivo) {
+        await new Promise(r => setTimeout(r, Math.floor(Math.random() * 300) + 200));
+      }
 
       let outMsg = '';
       if (modoRedacaoAuto && (parsed.eh_redacao || parsed.redacao)) {
@@ -686,9 +773,14 @@
       const ok = await ra();
       if (!ok) { loopAtivo = false; showAnim(false); break; }
       lastQuestionSig = sigBefore;
-      await new Promise(r => setTimeout(r, 300));
-      if (!siteAvancaSozinho) clicarProximo();
-      await new Promise(r => setTimeout(r, 600));
+      
+      const stepDelay = humanizadoAtivo ? Math.floor(Math.random() * 500) + 400 : 300;
+      await new Promise(r => setTimeout(r, stepDelay));
+      
+      if (siteAvancaSozinho) clicarProximo();
+      
+      const nextDelay = humanizadoAtivo ? Math.floor(Math.random() * 800) + 700 : 500;
+      await new Promise(r => setTimeout(r, nextDelay));
     }
   }
 
