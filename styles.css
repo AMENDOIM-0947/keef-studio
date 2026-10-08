@@ -1,11 +1,9 @@
-/* --- RESET E ESTILOS GERAIS --- */
 #keef-studio-v25, #keef-studio-v25 * {
   box-sizing: border-box !important;
   margin: 0;
   padding: 0;
 }
 
-/* --- LAYOUT DESKTOP (FLOATING CARD) --- */
 .keef-desktop-card {
   position: fixed !important;
   top: 12px !important;
@@ -27,7 +25,6 @@
   border: 1px solid rgba(168,85,247,0.5) !important;
 }
 
-/* --- LAYOUT MOBILE (BOTTOM SHEET TOUCH OPTIMIZED) --- */
 .keef-mobile-sheet {
   position: fixed !important;
   bottom: 0 !important;
@@ -48,7 +45,6 @@
   border-top: 2px solid #a855f7 !important;
 }
 
-/* --- CABEÇALHO E ABAS --- */
 #keef-studio-v25 .hdr {
   display: flex;
   align-items: center;
@@ -111,7 +107,6 @@
   border-top: 2px solid #a855f7;
 }
 
-/* --- CORPO E CONTROLES --- */
 #keef-studio-v25 .body {
   padding: 12px;
   overflow-y: auto;
@@ -217,7 +212,6 @@
   border: 1px solid rgba(56,189,248,0.2);
 }
 
-/* --- OVERLAYS FLUTUANTES --- */
 #keef-overlay-anim {
   position: fixed;
   top: 12px;
