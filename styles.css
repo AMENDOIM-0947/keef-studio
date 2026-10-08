@@ -1,0 +1,264 @@
+/* --- RESET E ESTILOS GERAIS --- */
+#keef-studio-v25, #keef-studio-v25 * {
+  box-sizing: border-box !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- LAYOUT DESKTOP (FLOATING CARD) --- */
+.keef-desktop-card {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 350px !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: 85vh !important;
+  background: #0d0a1a !important;
+  color: #f1f5f9 !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(168,85,247,0.4) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(168,85,247,0.5) !important;
+}
+
+/* --- LAYOUT MOBILE (BOTTOM SHEET TOUCH OPTIMIZED) --- */
+.keef-mobile-sheet {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  max-height: 75vh !important;
+  background: #0d0a1a !important;
+  color: #f1f5f9 !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: 13px !important;
+  border-radius: 18px 18px 0 0 !important;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.9) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border-top: 2px solid #a855f7 !important;
+}
+
+/* --- CABEÇALHO E ABAS --- */
+#keef-studio-v25 .hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #16102b;
+  border-bottom: 1px solid #2e1d52;
+  user-select: none;
+}
+
+#keef-studio-v25 .title {
+  font-weight: 800;
+  font-size: 13px;
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#keef-studio-v25 .badge {
+  background: #7c3aed;
+  color: #fff;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+#keef-studio-v25 .close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+#keef-studio-v25 .tabs {
+  display: flex;
+  background: #0d0a1a;
+  gap: 2px;
+  padding: 4px 6px 0;
+}
+
+#keef-studio-v25 .tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #16102b;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+
+#keef-studio-v25 .tab.active {
+  color: #fff;
+  background: #20163d;
+  border-top: 2px solid #a855f7;
+}
+
+/* --- CORPO E CONTROLES --- */
+#keef-studio-v25 .body {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  background: #130d29;
+  -webkit-overflow-scrolling: touch;
+}
+
+#keef-studio-v25 .panel { display: none; }
+#keef-studio-v25 .panel.active { display: block; }
+
+#keef-studio-v25 textarea, #keef-studio-v25 input[type="text"] {
+  width: 100% !important;
+  background: #090614 !important;
+  color: #fff !important;
+  border: 1px solid #332159 !important;
+  border-radius: 6px !important;
+  padding: 9px !important;
+  font-size: 12px !important;
+  margin-bottom: 8px !important;
+  outline: none !important;
+}
+
+#keef-studio-v25 label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #a78bfa;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  display: block;
+}
+
+#keef-studio-v25 .row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+#keef-studio-v25 button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+#keef-studio-v25 .btn-p { background: #7c3aed; color: #fff; flex: 1; }
+#keef-studio-v25 .btn-s { background: #231645; color: #cbd5e1; border: 1px solid #4a3285; }
+#keef-studio-v25 .btn-loop { background: #059669; color: #fff; flex: 1; }
+#keef-studio-v25 .btn-stop { background: #dc2626; color: #fff; flex: 1; }
+
+#keef-studio-v25 .tgl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #090614;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #231645;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+#keef-studio-v25 .tgl-btn {
+  background: #231645;
+  color: #94a3b8;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+}
+
+#keef-studio-v25 .tgl-btn.on { background: #059669; color: #fff; }
+
+#keef-studio-v25 .ans {
+  margin-top: 8px;
+  padding: 10px;
+  background: #090614;
+  border: 1px solid #7c3aed;
+  border-radius: 6px;
+  font-size: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: #f8fafc;
+}
+
+#keef-studio-v25 .st { font-size: 10px; font-weight: 700; color: #34d399; margin-top: 6px; }
+#keef-studio-v25 .st.err { color: #f87171; }
+
+#keef-studio-v25 .token-info {
+  font-size: 10px;
+  color: #38bdf8;
+  margin-bottom: 8px;
+  background: rgba(56,189,248,0.1);
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(56,189,248,0.2);
+}
+
+/* --- OVERLAYS FLUTUANTES --- */
+#keef-overlay-anim {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0d0a1a;
+  border: 1px solid #a855f7;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  z-index: 2147483647;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+#keef-toggle-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  background: #7c3aed;
+  color: #fff;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  cursor: pointer;
+  font-size: 18px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+#keef-toggle-btn.mobile-toggle {
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+}
