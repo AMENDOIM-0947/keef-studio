@@ -2,32 +2,30 @@
   'use strict';
 
   const ID = 'keef-studio-v25';
+  const USERNAME = 'AMENDOIM-0947';
+  const REPO = 'keef-studio';
+
   const ex = document.getElementById(ID);
   if (ex) {
     ex.style.display = (ex.style.display === 'none') ? 'flex' : 'none';
     return;
   }
 
-  // Detecção de Dispositivo Móvel
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
-  // Estados Globais
   let copyUnlockAtivo = true;
   let loopAtivo = false;
   let lerImagensAtivo = true;
-  let darkModeAtivo = true;
   let siteAvancaSozinho = false;
   let modoRedacaoAuto = true;
   let currentKeyIndex = 0;
   let lastQuestionSig = '';
 
-  // Chaves de LocalStorage
   const LK = 'keef_api_keys', LU = 'keef_endpoint_url', LM = 'keef_model', LE = 'keef_expansions', LP = 'keef_proxy_url';
   const defaultExp = '/resp=Responda de forma objetiva.\n/red=Escreva uma redação completa.';
   const expansionsRaw = localStorage.getItem(LE) || defaultExp;
 
-  // Injeção do CSS Externo
-  const cssPath = 'https://cdn.jsdelivr.net/gh/AMENDOIM-0947/keef-studio@main/styles.css';
+  const cssPath = `https://cdn.jsdelivr.net/gh/${USERNAME}/${REPO}@main/styles.css`;
   if (!document.getElementById(ID + '-css')) {
     const link = document.createElement('link');
     link.id = ID + '-css';
@@ -36,12 +34,13 @@
     document.head.appendChild(link);
   }
 
-  // Anti-Bloqueio de Cópia e Visibilidade
   (function setupProtections() {
     try {
       Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
       Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
-      document.hasFocus = () => true;
+      if (typeof document.hasFocus === 'function') {
+        document.hasFocus = () => true;
+      }
     } catch (e) {}
 
     ['oncopy', 'oncut', 'onpaste', 'oncontextmenu', 'onselectstart', 'ondragstart'].forEach(p => {
@@ -61,13 +60,11 @@
     });
   })();
 
-  // Resgate de Configurações
   const sk = localStorage.getItem(LK) || '';
   const su = localStorage.getItem(LU) || 'https://generativelanguage.googleapis.com/v1beta/models/';
-  const sm = localStorage.getItem(LM) || 'gemini-3.6-flash';
+  const sm = localStorage.getItem(LM) || 'gemini-1.5-flash';
   const sp = localStorage.getItem(LP) || '';
 
-  // Criação dos Elementos de Interface
   const animEl = document.createElement('div');
   animEl.id = 'keef-overlay-anim';
   animEl.innerHTML = '<span>⚡ PROCESSANDO COM IA...</span>';
@@ -104,7 +101,7 @@
         <div class="tgl"><span>Leitura de Imagens</span><button class="tgl-btn on" id="k-vis">ATIVO</button></div>
         <div class="tgl"><span>Avançar Automático</span><button class="tgl-btn" id="k-adv">DESATIVADO</button></div>
         <label>Instrução IA</label>
-        <textarea rows="${isMobile ? 2 : 2}" id="k-prompt">Responda a questão/redação com precisão.</textarea>
+        <textarea rows="2" id="k-prompt">Responda a questão/redação com precisão.</textarea>
         <div class="row">
           <button class="btn-p" data-act="ask">&#9889; Responder Rápido</button>
           <button class="btn-loop" data-act="loop">&#9654; Auto-Loop</button>
@@ -143,14 +140,12 @@
 
   (document.body || document.documentElement).appendChild(el);
 
-  // Preenchimento de Campos
   el.querySelector('[data-f="url"]').value = su;
   el.querySelector('[data-f="key"]').value = sk;
   el.querySelector('[data-f="model"]').value = sm;
   el.querySelector('[data-f="proxy"]').value = sp;
   el.querySelector('#k-exp-in').value = expansionsRaw;
 
-  // Utilitários de Interface
   function q(s) { return el.querySelector(s); }
   function ss(p, m, err) {
     const s = el.querySelector('[data-panel="' + p + '"] .st');
@@ -162,7 +157,6 @@
   function showAnim(v) { animEl.style.display = v ? 'flex' : 'none'; }
   function getKeys() { return (localStorage.getItem(LK) || '').split(',').map(k => k.trim()).filter(k => k.length > 0); }
 
-  // Listeners de Eventos
   q('#k-paste-key').addEventListener('click', async () => {
     let keyVal = '';
     try { if (navigator.clipboard && navigator.clipboard.readText) keyVal = await navigator.clipboard.readText(); } catch (e) {}
@@ -252,7 +246,6 @@
     toggleBtn.remove();
   });
 
-  // Arrastar Painel (Apenas Desktop)
   if (!isMobile) {
     let dg = false, ox = 0, oy = 0;
     const h = q('.hdr');
@@ -283,7 +276,6 @@
     ss('cfg', '✔ Configurações salvas!', false);
   });
 
-  // Funções Principais de Rastreamento e Automação
   function getQuestionSignature() {
     return (document.body.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 200);
   }
@@ -293,7 +285,7 @@
     const clone = target.cloneNode(true);
     const bads = clone.querySelectorAll('script, style, nav, header, footer, #' + ID + ', [id^="keef"]');
     bads.forEach(b => b.remove());
-    return (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1000);
+    return (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1500);
   }
 
   function triggerFullClick(elItem) {
@@ -399,7 +391,24 @@
     if (!textoAlvo && !letraAlvo) return false;
     const targetText = (textoAlvo || '').trim().toLowerCase();
     const targetLetter = (letraAlvo || '').trim().toUpperCase();
-    const candidateSelectors = ['input[type="radio"]', 'input[type="checkbox"]', 'label', '[role="radio"]', '[role="checkbox"]', '[role="option"]', 'li', 'button', 'div[class*="option"]', 'div[class*="alternativa"]', 'div[class*="choice"]', 'div[class*="answer"]', 'div[class*="resposta"]'];
+
+    const candidateSelectors = [
+      'input[type="radio"]',
+      'input[type="checkbox"]',
+      'label',
+      '[role="radio"]',
+      '[role="checkbox"]',
+      '[role="option"]',
+      'li',
+      'button',
+      'div[class*="option"]',
+      'div[class*="alternativa"]',
+      'div[class*="choice"]',
+      'div[class*="answer"]',
+      'div[class*="resposta"]',
+      'span[class*="option"]',
+      'p[class*="option"]'
+    ];
     const elements = Array.from(document.querySelectorAll(candidateSelectors.join(',')));
     let matchFound = false;
 
@@ -418,16 +427,21 @@
 
       let isTextMatch = false;
       if (targetText && targetText.length >= 2) {
-        isTextMatch = cleanTxt.includes(targetText) || (cleanTxt.length > 3 && targetText.includes(cleanTxt));
+        const cleanTarget = targetText.replace(/^[a-eA-E][\.\)\s\-:]+/, '').trim();
+        isTextMatch = cleanTxt.includes(targetText) || 
+                      (cleanTarget.length >= 3 && cleanTxt.includes(cleanTarget)) || 
+                      (cleanTxt.length > 3 && targetText.includes(cleanTxt));
       }
 
       if (isLetterMatch || isTextMatch) {
         matchFound = true;
         triggerFullClick(elItem);
+        
         const highlightEl = (elItem.tagName === 'INPUT' && elItem.parentElement) ? elItem.parentElement : elItem;
         highlightEl.style.outline = '3px solid #a855f7';
         highlightEl.style.boxShadow = '0 0 16px rgba(168,85,247,0.9)';
         highlightEl.style.borderRadius = '6px';
+        
         if (elItem.tagName === 'INPUT') {
           const parentLabel = elItem.closest('label') || document.querySelector('label[for="' + elItem.id + '"]');
           if (parentLabel) triggerFullClick(parentLabel);
@@ -457,7 +471,12 @@
 
   function buildRequestObj(baseUrl, apiKey, model, proxyPrefix, partsArray) {
     let fu = baseUrl.replace(/\/+$/, '');
-    if (fu.indexOf(':generateContent') === -1) fu += '/' + (model || 'gemini-3.6-flash') + ':generateContent';
+    const modelTarget = model || 'gemini-1.5-flash';
+    if (fu.indexOf(':generateContent') === -1) {
+      if (fu.endsWith('/models')) fu += '/' + modelTarget + ':generateContent';
+      else if (fu.includes('/models/')) fu += ':generateContent';
+      else fu += '/' + modelTarget + ':generateContent';
+    }
     let targetUrl = fu + '?key=' + encodeURIComponent(apiKey);
     if (proxyPrefix && proxyPrefix.trim()) targetUrl = proxyPrefix.trim() + encodeURI(targetUrl);
     return {
@@ -469,7 +488,7 @@
 
   async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs || 6000);
+    const id = setTimeout(() => controller.abort(), timeoutMs || 8000);
     const opts = Object.assign({}, options, { signal: controller.signal });
     try {
       const res = await fetch(url, opts);
@@ -487,14 +506,16 @@
     showAnim(true);
     ss('ask', '', false);
     try {
-      const u = localStorage.getItem(LU) || '', m = localStorage.getItem(LM) || 'gemini-3.6-flash', p = localStorage.getItem(LP) || '';
+      const u = localStorage.getItem(LU) || 'https://generativelanguage.googleapis.com/v1beta/models/';
+      const m = localStorage.getItem(LM) || 'gemini-1.5-flash';
+      const p = localStorage.getItem(LP) || '';
       let qs = q('#k-prompt').value.trim();
       qs = applyExpansions(qs);
       const keys = getKeys();
-      if (keys.length === 0 || !u) { ss('ask', '⚠ Keys/Config ausentes!', true); return false; }
+      if (keys.length === 0) { ss('ask', '⚠ Cadastre a API Key na aba Config!', true); return false; }
 
       const pageTxt = extractMinimalPageText();
-      const promptText = 'Questão:' + pageTxt + '\nInstrução:' + qs + '\nResponda JSON puro:{"eh_redacao":false,"titulo":"","redacao":"","letra":"A","texto_alternativa":"texto da resposta","explicacao":""}';
+      const promptText = 'Questão:\n' + pageTxt + '\nInstrução:' + qs + '\nResponda estritamente neste formato JSON:{"eh_redacao":false,"titulo":"","redacao":"","letra":"A","texto_alternativa":"texto exato da opção selecionada","explicacao":""}';
       const partsArray = [{ text: promptText }];
 
       let rp, lastEt, sucesso = false;
@@ -502,7 +523,7 @@
         const currentKey = keys[currentKeyIndex];
         const rq = buildRequestObj(u, currentKey, m, p, partsArray);
         try {
-          rp = await fetchWithTimeout(rq.url, { method: 'POST', headers: rq.headers, body: JSON.stringify(rq.body) }, 6000);
+          rp = await fetchWithTimeout(rq.url, { method: 'POST', headers: rq.headers, body: JSON.stringify(rq.body) }, 8000);
           if (rp.ok) { sucesso = true; break; }
         } catch (e) {
           lastEt = e.message;
@@ -511,9 +532,9 @@
         }
       }
 
-      if (!sucesso) throw new Error('Erro API: ' + (lastEt || '').slice(0, 60));
+      if (!sucesso) throw new Error('Erro API/Key: ' + (lastEt || 'Falha na requisição').slice(0, 60));
       const dt = await rp.json();
-      let rawText = (dt.candidates[0].content.parts[0].text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+      let rawText = (dt.candidates?.[0]?.content?.parts?.[0]?.text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       if (jsonMatch) rawText = jsonMatch[0];
 
@@ -530,7 +551,9 @@
       }
 
       const mFound = selecionarECircular(parsed.texto_alternativa, parsed.letra);
-      if (parsed.letra || parsed.texto_alternativa) outMsg += '<b>Resp:</b> ' + (parsed.letra ? parsed.letra + ' - ' : '') + (parsed.texto_alternativa || '');
+      if (parsed.letra || parsed.texto_alternativa) {
+        outMsg += '<b>Resp:</b> ' + (parsed.letra ? parsed.letra + ' - ' : '') + (parsed.texto_alternativa || '');
+      }
       ans.innerHTML = outMsg || rawText;
       ans.style.display = 'block';
       ss('ask', mFound ? '✔ Alternativa Selecionada!' : '⚠ Resposta no Painel', false);
@@ -556,9 +579,9 @@
       const ok = await ra();
       if (!ok) { loopAtivo = false; showAnim(false); break; }
       lastQuestionSig = sigBefore;
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 400));
       if (!siteAvancaSozinho) clicarProximo();
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 800));
     }
   }
 
